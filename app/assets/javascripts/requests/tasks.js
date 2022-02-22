@@ -4,76 +4,131 @@ $.ajaxSetup({
   }
 });
 
-var indexTasks = function (successCB, errorCB) {
-  var request = {
+const updateList = () => {
+  $('.task-container').children().remove()
+  console.log('update list!')
+  $.ajax({
     type: 'GET',
     url: 'api/tasks?api_key=1',
-    success: successCB,
-    error: errorCB
-  }
+    dataType: 'json',
+    success: function (response, textStatus) {
+        console.log(response);
+        tasksArr = response;
+        let activeArr = tasksArr.tasks.filter(obj => {
+          return obj.completed === false;
+        });
+        let completedArr = tasksArr.tasks.filter(obj => {
+          return obj.completed === true;
+        });
+        
+        $('#allTotal').text(`${tasksArr.tasks.length}`);
+        $('#activeTotal').text(`${activeArr.length}`);
+        $('#completedTotal').text(`${completedArr.length}`);
 
-  $.ajax(request);
-};
-
-/*
-var indexTasks = function () {
-  var request = {
-    type: 'GET',
-    url: 'api/tasks?api_key=1',
-    success: function (response) {
-      console.log(response);
+        //console.log('activeArr: ' + activeArr);
+        //console.log('completedArr: ' + completedArr);
+        const activeOption = document.getElementById('activeSelected');
+        //console.log('activeOption: ' + activeOption);
+        const completedOption = document.getElementById('completedSelected');
+        //console.log('completedOption: ' + completedOption);
+      
+        if (activeOption.checked) {
+          //console.log('Active Selected!');
+          for ( i = 0; i < activeArr.length; i++) {
+            addTask(activeArr[i].content);
+          }
+        }   else if (completedOption.checked) {
+          //console.log('Completed Selected!');
+          for ( i = 0; i < completedArr.length; i++) {
+            addTaskCompleted(completedArr[i].content);
+          }
+        } else {
+        //console.log('tasksArr: ' + tasksArr);
+        //console.log('tasksArr.tasks.length: ' + tasksArr.tasks.length);
+        for ( i = 0; i < tasksArr.tasks.length; i++) {
+          //console.log('i: ' + i);
+          //console.log('tasksArr.tasks[i].content: ' + tasksArr.tasks[i].content)
+          //console.log('tasksArr.tasks[i].completed: ' + tasksArr.tasks[i].completed)
+          if (tasksArr.tasks[i].completed) {
+            addTaskCompleted(tasksArr.tasks[i].content);
+          } else {
+            addTask(tasksArr.tasks[i].content);
+          }                
+        } 
+      }
     },
-    error: function (request, errorMsg) {
-      console.log(request, errorMsg);
+    error: function (request, textStatus, errorMessage) {
+      console.log(errorMessage);
     }
-  }  
+  });
+}
 
-  $.ajax(request);
-};
-*/
 
-indexTasks();
-
-var postTask = function (content, successCB, errorCB) {
-  var request = {
-    type: 'POST',
-    url: 'api/tasks?api_key=1',
-    data: {
-      tasks: {
-        content: content
-      }
+const deleteTask = (deleteId, deleteDiv) => {
+  $.ajax({
+    type: 'DELETE',
+    url: 'api/tasks/' + deleteId + '?api_key=1',
+    success: function (response, textStatus) {
+      $(deleteDiv).remove();
+      console.log('Deleted: ' + deleteId);
+      $('#newTask').val('');
+      updateList();
     },
-    success: successCB,
-    error: errorCB
-  }
+    error: function (request, textStatus, errorMessage) {
+      console.log(errorMessage);
+    }
+  });
+}
 
-  $.ajax(request);
-};
-
-
-
-
-/*
-var postTask = function (content) {
-  var request = {
-    type: 'POST',
-    url: 'api/tasks?api_key=1',
-    
-
-    data: {
-      task: {
-        content: content
-      }
-    },
-    success: function (response) {
+const markCompleteTask = (completedId) => {
+  $.ajax({
+    type: 'PUT',
+    url: 'api/tasks/' + completedId + '/mark_complete?api_key=1',
+    dataType: 'json',
+    success: function (response, textStatus) {
       console.log(response);
+      updateList();
     },
-    error: function (request, erorMsg) {
-      console.log(request, errorMsg);
-    } 
-  }
+    error: function (request, textStatus, errorMessage) {
+      console.log(errorMessage);
+    }
+ });
+}
 
-  $.ajax(request);
-};
-*/
-//postTask('this is some task...');
+const markActiveTask = (completedId) => {
+  $.ajax({
+    type: 'PUT',
+    url: 'api/tasks/' + completedId + '/mark_active?api_key=1',
+    dataType: 'json',
+    success: function (response, textStatus) {
+      console.log(response);
+      updateList();
+    },
+    error: function (request, textStatus, errorMessage) {
+      console.log(errorMessage);
+    }
+ });
+}
+
+const postTask = (newTask) => {
+  $.ajax({
+    type: 'POST',
+    url: 'api/tasks?api_key=1',
+    contentType: 'application/json',
+    dataType: 'json',
+    data: JSON.stringify({
+      task: {
+        content: `${newTask}`,
+      }
+    }),
+    success: function (response, textStatus) {
+      //console.log(response);
+      addTask(newTask);
+      $('#newTask').val('');
+      updateList();
+    },
+    error: function (request, textStatus, errorMessage) {
+      console.log(errorMessage);
+    }
+  }); 
+}
